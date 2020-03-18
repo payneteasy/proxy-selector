@@ -4,7 +4,7 @@
 
     <artifactId>proxy-selector</artifactId>
     <groupId>com.payneteasy</groupId>
-    <version>1.0-2-SNAPSHOT</version>
+    <version>1.0-2</version>
 
     <name>Http Proxy Selector ${project.version}</name>
 
@@ -39,7 +39,7 @@
         <connection>scm:git:git@github.com:payneteasy/proxy-selector.git</connection>
         <developerConnection>scm:git:git@github.com:payneteasy/proxy-selector.git</developerConnection>
         <url>https://github.com/payneteasy/proxy-selector.git</url>
-        <tag>HEAD</tag>
+        <tag>proxy-selector-1.0-2</tag>
   </scm>
 
     <!--
@@ -88,7 +88,7 @@
             <dependency>
                 <groupId>com.payneteasy.proxy-selector</groupId>
                 <artifactId>selector</artifactId>
-                <version>1.0-2-SNAPSHOT</version>
+                <version>1.0-2</version>
             </dependency>
 
             <dependency>
