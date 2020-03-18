@@ -19,7 +19,7 @@ public class HttpProxyConfigFileWatcher implements Runnable {
     private final IFileChangedListener listener;
 
     public HttpProxyConfigFileWatcher(File aConfigFile, IFileChangedListener aFileChangedListener) {
-        configFile = aConfigFile;
+        configFile = notNull(aConfigFile, "aConfigFile is null");
         listener  = aFileChangedListener;
         thread = new Thread(this);
         thread.setName("proxy-config-watcher-" + aConfigFile.getName());
@@ -37,7 +37,12 @@ public class HttpProxyConfigFileWatcher implements Runnable {
     public void run() {
         while(!Thread.currentThread().isInterrupted()) {
             try {
-                watchFile();
+                try {
+                    watchFile();
+                } catch (NullPointerException e) {
+                    LOG.error("Cannot use WatchService, falling back to lastModified", e);
+                    watchFileFallback();
+                }
             } catch (IOException e) {
                 LOG.error("Can't watch file {}", configFile, e);
             } catch (InterruptedException e) {
@@ -47,10 +52,14 @@ public class HttpProxyConfigFileWatcher implements Runnable {
         }
     }
 
+
     void watchFile() throws IOException, InterruptedException {
 
-        WatchService watchService = FileSystems.getDefault().newWatchService();
-        configFile.getParentFile().toPath().register(watchService, ENTRY_MODIFY);
+        WatchService watchService   = FileSystems.getDefault().newWatchService();
+        File         parentFile     = notNull(configFile.getParentFile(), "Parent file is null for " + configFile.getAbsolutePath());
+        Path         parentFilePath = notNull(parentFile.toPath(), "Parent path is null for " + parentFile.getAbsolutePath());
+
+        parentFilePath.register(watchService, ENTRY_MODIFY);
 
         LOG.info("Started to watch file {}", configFile);
         long lastModified = configFile.lastModified();
@@ -75,6 +84,28 @@ public class HttpProxyConfigFileWatcher implements Runnable {
                 key.reset();
             }
         }
+    }
+
+    private static <T> T notNull(T aTarget, String aErrorMessage) {
+        if(aTarget == null) {
+            throw new NullPointerException(aErrorMessage);
+        }
+        return aTarget;
+    }
+
+    private void watchFileFallback() throws InterruptedException {
+        LOG.info("Started watch file with fallback: " + configFile.getAbsolutePath());
+        long lastModified = configFile.lastModified();
+
+        while(!Thread.currentThread().isInterrupted()) {
+            Thread.sleep(5_000);
+
+            if(lastModified != configFile.lastModified()) {
+                lastModified = configFile.lastModified();
+                listener.fileChanged();
+            }
+        }
+
     }
 
     interface IFileChangedListener {
